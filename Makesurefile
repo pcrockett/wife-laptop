@@ -57,7 +57,7 @@ function flatpak_is_installed() {
   hostnamectl set-hostname "${LAPTOP_HOSTNAME}"
 
 @goal initial_system_upgrade @private
-@depends_on apt_updated repo_initialized hostname_set
+@depends_on apt_upgraded repo_initialized hostname_set
 @reached_if [ -f .state/system_upgrade ]
   echo "Reboot now!"
   touch .state/system_upgrade
