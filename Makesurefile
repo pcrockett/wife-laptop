@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+#
+# For more details about Makesure:
+#
+# https://github.com/xonixx/makesure
+#
+@shell bash
+
+@define LAPTOP_USERNAME="${USER}"
+@define LAPTOP_HOSTNAME="blueberry"
+
+@define REPO_DIR="$(dirname "$(readlink -f "${0}")")"
+
+@define BOTTOM_DEB_NAME="bottom_0.6.6_amd64.deb"
+@define BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download/0.6.6/${BOTTOM_DEB_NAME}"
+
+@define HOME=~
+
+@lib
+
+set -Eeuo pipefail
+
+function flathub_install() {
+  flatpak install --assumeyes --noninteractive --app "${1}" flathub
+}
+
+function command_exists() {
+  command -v "${1}" &> /dev/null
+}
+
+function service_exists() {
+  systemctl list-unit-files --full --type=service | grep --fixed-strings "${1}.service" > /dev/null
+}
+
+function flatpak_is_installed() {
+  flatpak info "${1}" &> /dev/null
+}
+
+@goal default
+@depends_on repo_initialized initial_system_upgrade software_installed configured
+
+@goal software_installed @private
+@depends_on standard_notes_installed bottom_installed signal_installed iptables_persistent_installed
+
+@goal configured @private
+@depends_on hostname_set iptables_configured bottom_configured
+
+@goal repo_initialized @private
+@reached_if [ -d .state ]
+  mkdir .state
+
+@goal apt_updated @private
+  sudo apt-get update
+
+@goal apt_upgraded @private
+@depends_on apt_updated
+  sudo apt-get upgrade
+
+@goal hostname_set @private
+@reached_if [ "$(hostname)" = "${LAPTOP_HOSTNAME}" ]
+  hostnamectl set-hostname "${LAPTOP_HOSTNAME}"
+
+@goal initial_system_upgrade @private
+@depends_on apt_updated repo_initialized hostname_set
+@reached_if [ -f .state/system_upgrade ]
+  echo "Reboot now!"
+  touch .state/system_upgrade
+  exit 1
+
+@goal standard_notes_installed @private
+@reached_if flatpak_is_installed org.standardnotes.standardnotes
+@use_lib
+  flathub_install org.standardnotes.standardnotes
+
+@goal bottom_downloaded @private
+@reached_if [ -f ".state/${BOTTOM_DEB_NAME}" ]
+  cd .state || exit 1
+  wget "${BOTTOM_DL_URL}"
+
+@goal bottom_installed @private
+@use_lib
+@reached_if command_exists btm
+@depends_on bottom_downloaded
+  sudo dpkg --install ".state/${BOTTOM_DEB_NAME}"
+
+@goal signal_installed @private
+@reached_if flatpak_is_installed org.signal.Signal
+@use_lib
+  flathub_install org.signal.Signal
+
+@goal iptables_persistent_installed @private
+@use_lib
+@depends_on apt_updated
+@reached_if service_exists iptables
+  sudo apt-get install --yes iptables-persistent
+
+@goal iptables_rules_placed @private
+@depends_on iptables_persistent_installed
+@reached_if [ -f /etc/iptables/rules.v4 ] && [ -f /etc/iptables/rules.v6 ]
+  sudo cp config/iptables/rules.v4 /etc/iptables/
+  sudo cp config/iptables/rules.v6 /etc/iptables/
+
+@goal iptables_configured @private
+@depends_on iptables_rules_placed
+@reached_if [ "$(systemctl is-enabled netfilter-persistent)" = "enabled" ]
+  sudo systemctl enable --now iptables
+  sudo systemctl enable --now ip6tables
+
+@goal bottom_configured @private
+@reached_if [ -L ~/.config/bottom/bottom.toml ]
+  bottom_dir=~/.config/bottom
+  mkdir --parent "${bottom_dir}"
+  rm --force "${bottom_dir}/bottom.toml"
+  ln --symbolic "${REPO_DIR}/config/bottom.toml" "${bottom_dir}/bottom.toml"
+
