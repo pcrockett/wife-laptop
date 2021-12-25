@@ -9,12 +9,8 @@
 @define LAPTOP_USERNAME="${USER}"
 @define LAPTOP_HOSTNAME="blueberry"
 
-@define REPO_DIR="$(dirname "$(readlink -f "${0}")")"
-
 @define BOTTOM_DEB_NAME="bottom_0.6.6_amd64.deb"
 @define BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download/0.6.6/${BOTTOM_DEB_NAME}"
-
-@define HOME=~
 
 @lib
 
@@ -111,5 +107,7 @@ function flatpak_is_installed() {
   bottom_dir=~/.config/bottom
   mkdir --parent "${bottom_dir}"
   rm --force "${bottom_dir}/bottom.toml"
-  ln --symbolic "${REPO_DIR}/config/bottom.toml" "${bottom_dir}/bottom.toml"
+
+  repo_dir="$(readlink -f .)"
+  ln --symbolic "${repo_dir}/config/bottom.toml" "${bottom_dir}/bottom.toml"
 
