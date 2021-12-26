@@ -37,6 +37,7 @@ function flatpak_is_installed() {
 
 @goal software_installed @private
 @depends_on standard_notes_installed bottom_installed signal_installed iptables_persistent_installed
+@depends_on gnome_dav_support_shim_installed
 
 @goal configured @private
 @depends_on hostname_set iptables_configured bottom_configured
@@ -89,6 +90,21 @@ function flatpak_is_installed() {
 @depends_on apt_updated
 @reached_if service_exists iptables
   sudo apt-get install --yes iptables-persistent
+
+@goal gnome_dav_support_shim_downloaded @private
+@reached_if [ -f .state/gnome-dav-support-amd64.zip ]
+  # https://github.com/pcrockett/Gnome-DAV-Support-Shim
+  cd .state || exit 1
+  wget https://github.com/pcrockett/Gnome-DAV-Support-Shim/releases/download/v1.0/gnome-dav-support-amd64.zip
+
+@goal gnome_dav_support_shim_installed @private
+@use_lib
+@depends_on gnome_dav_support_shim_downloaded
+@reached_if user_service_exists gnome-dav-shim --user
+  cd .state || exit 1
+  unzip gnome-dav-support-amd64.zip
+  ./install.sh
+  rm install.sh # Don't want a nondescript `install.sh` hanging around...
 
 @goal iptables_rules_placed @private
 @depends_on iptables_persistent_installed
