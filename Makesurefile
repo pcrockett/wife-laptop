@@ -28,6 +28,11 @@ function service_exists() {
   systemctl list-unit-files --full --type=service | grep --fixed-strings "${1}.service" > /dev/null
 }
 
+user_service_exists() {
+  local service_name="${1}"
+  systemctl list-unit-files --full --type=service --user | grep --fixed-strings "${service_name}.service" &> /dev/null
+}
+
 function flatpak_is_installed() {
   flatpak info "${1}" &> /dev/null
 }
@@ -100,7 +105,7 @@ function flatpak_is_installed() {
 @goal gnome_dav_support_shim_installed @private
 @use_lib
 @depends_on gnome_dav_support_shim_downloaded
-@reached_if user_service_exists gnome-dav-shim --user
+@reached_if user_service_exists gnome-dav-shim
   cd .state || exit 1
   unzip gnome-dav-support-amd64.zip
   ./install.sh
