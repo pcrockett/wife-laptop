@@ -1,0 +1,8 @@
+# These values come by default on a Pop!_OS machine:
+127.0.0.1   localhost
+::1         localhost
+127.0.1.1   pop-os.localdomain pop-os
+
+# These are added by me:
+10.34.138.5 printer.home
+

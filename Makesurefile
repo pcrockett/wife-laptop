@@ -28,13 +28,20 @@ function service_exists() {
   systemctl list-unit-files --full --type=service | grep --fixed-strings "${1}.service" > /dev/null
 }
 
-user_service_exists() {
+function user_service_exists() {
   local service_name="${1}"
   systemctl list-unit-files --full --type=service --user | grep --fixed-strings "${service_name}.service" &> /dev/null
 }
 
 function flatpak_is_installed() {
   flatpak info "${1}" &> /dev/null
+}
+
+function get_sha256() {
+  local sha_sum_output
+  IFS=" " read -r -a sha_sum_output <<< "$(sha256sum "${1}")"
+  # https://github.com/koalaman/shellcheck/wiki/SC2207
+  echo "${sha_sum_output[0]}"
 }
 
 @goal default
@@ -45,7 +52,7 @@ function flatpak_is_installed() {
 @depends_on gnome_dav_support_shim_installed
 
 @goal configured @private
-@depends_on hostname_set iptables_configured bottom_configured tailscale_connected
+@depends_on hostname_set iptables_configured bottom_configured tailscale_connected hosts_configured
 
 @goal repo_initialized @private
 @reached_if [ -d .state ]
@@ -153,4 +160,9 @@ function flatpak_is_installed() {
 @depends_on tailscale_installed
 @reached_if tailscale status &> /dev/null
   sudo tailscale up --accept-routes
+
+@goal hosts_configured @private
+@reached_if [ "$(get_sha256 /etc/hosts)" == "$(get_sha256 ./config/hosts)" ]
+  sudo cp ./config/hosts /etc/hosts
+  sudo chown root:root /etc/hosts
 
