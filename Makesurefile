@@ -45,7 +45,7 @@ function flatpak_is_installed() {
 @depends_on gnome_dav_support_shim_installed
 
 @goal configured @private
-@depends_on hostname_set iptables_configured bottom_configured
+@depends_on hostname_set iptables_configured bottom_configured tailscale_connected
 
 @goal repo_initialized @private
 @reached_if [ -d .state ]
@@ -128,7 +128,29 @@ function flatpak_is_installed() {
   bottom_dir=~/.config/bottom
   mkdir --parent "${bottom_dir}"
   rm --force "${bottom_dir}/bottom.toml"
-
   repo_dir="$(readlink -f .)"
   ln --symbolic "${repo_dir}/config/bottom.toml" "${bottom_dir}/bottom.toml"
+
+@goal tailscale_key_added @private
+@reached_if [ -f /etc/apt/trusted.gpg.d/tailscale.gpg ]
+  sudo cp ./config/tailscale/tailscale.gpg /etc/apt/trusted.gpg.d/
+  sudo chown root:root /etc/apt/trusted.gpg.d/tailscale.gpg
+
+@goal tailscale_list_added @private
+@depends_on tailscale_key_added
+@reached_if [ -f /etc/apt/sources.list.d/tailscale.list ]
+  sudo cp ./config/tailscale/tailscale.list /etc/apt/sources.list.d/
+  sudo chown root:root /etc/apt/sources.list.d/tailscale.list
+  sudo apt-get update
+
+@goal tailscale_installed @private
+@use_lib
+@reached_if command_exists tailscale
+@depends_on tailscale_list_added
+  sudo apt-get install --yes tailscale
+
+@goal tailscale_connected @private
+@depends_on tailscale_installed
+@reached_if tailscale status &> /dev/null
+  sudo tailscale up --accept-routes
 
