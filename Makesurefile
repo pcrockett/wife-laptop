@@ -162,6 +162,7 @@ function get_sha256() {
   sudo tailscale up --accept-routes
 
 @goal hosts_configured @private
+@use_lib
 @reached_if [ "$(get_sha256 /etc/hosts)" == "$(get_sha256 ./config/hosts)" ]
   sudo cp ./config/hosts /etc/hosts
   sudo chown root:root /etc/hosts
