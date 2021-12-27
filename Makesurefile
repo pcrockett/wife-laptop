@@ -53,6 +53,7 @@ function get_sha256() {
 
 @goal configured @private
 @depends_on hostname_set iptables_configured bottom_configured tailscale_connected hosts_configured
+@depends_on scanner_configured
 
 @goal repo_initialized @private
 @reached_if [ -d .state ]
@@ -166,4 +167,23 @@ function get_sha256() {
 @reached_if [ "$(get_sha256 /etc/hosts)" == "$(get_sha256 ./config/hosts)" ]
   sudo cp ./config/hosts /etc/hosts
   sudo chown root:root /etc/hosts
+
+@goal brscan_deb_downloaded @private
+@reached_if [ -f ".state/brscan4.amd64.deb" ]
+  curl --fail --silent --show-error \
+    --output .state/brscan4.amd64.deb \
+    --location "https://download.brother.com/welcome/dlf006645/brscan4-0.4.10-1.amd64.deb"
+
+@goal brscan_installed @private
+@use_lib
+@reached_if command_exists brsaneconfig4
+@depends_on brscan_deb_downloaded
+  sudo dpkg --install .state/brscan4.amd64.deb
+
+@goal scanner_configured @private
+@use_lib
+@reached_if .state/printer_configured
+@depends_on brscan_installed
+  sudo brsaneconfig4 -a name=Scanner_DCP7055W model=DCP7055W ip=10.34.138.5 || exit 1
+  touch .state/printer_configured
 
