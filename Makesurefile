@@ -133,7 +133,7 @@ function get_sha256() {
   if [ "$(systemctl is-active ip6tables)" == "active" ]; then
     sudo systemctl restart ip6tables
   fi
-  if [ command_exists tailscale ] && [ tailscale status &> /dev/null ]; then
+  if command_exists tailscale && tailscale status &> /dev/null; then
     sudo tailscale down
     sudo tailscale up --accept-routes
   fi
