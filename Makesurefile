@@ -12,6 +12,8 @@
 @define BOTTOM_DEB_NAME="bottom_0.6.6_amd64.deb"
 @define BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download/0.6.6/${BOTTOM_DEB_NAME}"
 
+@define IPTABLES_RULES_VERSION="v1"
+
 @lib
 
 set -Eeuo pipefail
@@ -49,11 +51,11 @@ function get_sha256() {
 
 @goal software_installed @private
 @depends_on standard_notes_installed bottom_installed signal_installed iptables_persistent_installed
-@depends_on gnome_dav_support_shim_installed
+@depends_on gnome_dav_support_shim_installed iptables_rules_placed
 
 @goal configured @private
 @depends_on hostname_set iptables_configured bottom_configured tailscale_connected hosts_configured
-@depends_on scanner_configured
+@depends_on scanner_configured sshd_configured authorized_keys_configured
 
 @goal repo_initialized @private
 @reached_if [ -d .state ]
@@ -121,13 +123,24 @@ function get_sha256() {
 
 @goal iptables_rules_placed @private
 @depends_on iptables_persistent_installed
-@reached_if [ -f /etc/iptables/rules.v4 ] && [ -f /etc/iptables/rules.v6 ]
+@reached_if [ -f .state/iptables-version ] && [ "$(cat .state/iptables-version)" == "${IPTABLES_RULES_VERSION}" ]
   sudo cp config/iptables/rules.v4 /etc/iptables/
   sudo cp config/iptables/rules.v6 /etc/iptables/
+  if [ "$(systemctl is-active iptables)" == "active" ]; then
+    sudo systemctl restart iptables
+  fi
+  if [ "$(systemctl is-active ip6tables)" == "active" ]; then
+    sudo systemctl restart ip6tables
+  fi
+  if [ command_exists tailscale ] && [ tailscale status &> /dev/null ]; then
+    sudo tailscale down
+    sudo tailscale up --accept-routes
+  fi
+  echo "${IPTABLES_RULES_VERSION}" > .state/iptables-version
 
 @goal iptables_configured @private
 @depends_on iptables_rules_placed
-@reached_if [ "$(systemctl is-enabled netfilter-persistent)" = "enabled" ]
+@reached_if [ "$(systemctl is-enabled netfilter-persistent)" == "enabled" ]
   sudo systemctl enable --now iptables
   sudo systemctl enable --now ip6tables
 
@@ -183,7 +196,23 @@ function get_sha256() {
 @goal scanner_configured @private
 @use_lib
 @reached_if .state/printer_configured
-@depends_on brscan_installed
+@depends_on brscan_installed tailscale_connected
   sudo brsaneconfig4 -a name=Scanner_DCP7055W model=DCP7055W ip=10.34.138.5 || exit 1
   touch .state/printer_configured
+
+@goal sshd_installed @private
+@use_lib
+@reached_if command_exists sshd
+@depends_on apt_updated
+  sudo apt-get install --yes openssh-server
+
+@goal sshd_configured @private
+@depends_on sshd_installed
+  # TODO
+
+@goal authorized_keys_configured @private
+@reached_if [ -f ~/.ssh/authorized_keys ] && [ "$(get_sha256 ~/.ssh/authorized_keys)" == "$(get_sha256 ./config/ssh/authorized_keys)" ]
+  mkdir --parent ~/.ssh
+  cp ./config/ssh/authorized_keys ~/.ssh
+  chmod -R go-rwx ~/.ssh
 
