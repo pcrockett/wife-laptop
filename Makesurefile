@@ -122,6 +122,7 @@ function get_sha256() {
   rm install.sh # Don't want a nondescript `install.sh` hanging around...
 
 @goal iptables_rules_placed @private
+@use_lib
 @depends_on iptables_persistent_installed
 @reached_if [ -f .state/iptables-version ] && [ "$(cat .state/iptables-version)" == "${IPTABLES_RULES_VERSION}" ]
   sudo cp config/iptables/rules.v4 /etc/iptables/
@@ -199,7 +200,7 @@ function get_sha256() {
 @depends_on brscan_installed tailscale_connected
   sudo brsaneconfig4 -a name=Scanner_DCP7055W model=DCP7055W ip=10.34.138.5 || exit 1
   touch .state/printer_configured
-
+https://github.com/waydroid/waydroid
 @goal sshd_installed @private
 @use_lib
 @reached_if command_exists sshd
