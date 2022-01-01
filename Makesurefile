@@ -195,7 +195,7 @@ function get_sha256() {
 
 @goal scanner_configured @private
 @use_lib
-@reached_if .state/printer_configured
+@reached_if [ -f .state/printer_configured ]
 @depends_on brscan_installed tailscale_connected
   sudo brsaneconfig4 -a name=Scanner_DCP7055W model=DCP7055W ip=10.34.138.5 || exit 1
   touch .state/printer_configured
