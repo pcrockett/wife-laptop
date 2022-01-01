@@ -199,18 +199,32 @@ function get_sha256() {
 @depends_on brscan_installed tailscale_connected
   sudo brsaneconfig4 -a name=Scanner_DCP7055W model=DCP7055W ip=10.34.138.5 || exit 1
   touch .state/printer_configured
-https://github.com/waydroid/waydroid
+
 @goal sshd_installed @private
 @use_lib
 @reached_if command_exists sshd
 @depends_on apt_updated
   sudo apt-get install --yes openssh-server
 
-@goal sshd_configured @private
+@goal ssh_host_keys_regenerated @private
 @depends_on sshd_installed
-  # TODO
+@reached_if [ -f .state/ssh_host_keys_regenerated ]
+  pushd /etc/ssh || exit 1
+  sudo rm ssh_host_*key* || exit 1
+  sudo ssh-keygen -t ed25519 -f ssh_host_ed25519_key -N "" < /dev/null || exit 1
+  popd || exit 1
+  touch .state/ssh_host_keys_regenerated
+
+@goal sshd_configured @private
+@use_lib
+@depends_on ssh_host_keys_regenerated
+@reached_if [ "$(get_sha256 config/ssh/blueberry.conf)" == "$(get_sha256 /etc/ssh/sshd_config.d/blueberry.conf)" ]
+  sudo cp config/ssh/blueberry.conf /etc/ssh/sshd_config.d/ || exit 1
+  sudo chown root:root /etc/ssh/sshd_config.d/blueberry.conf || exit 1
+  sudo systemctl restart sshd
 
 @goal authorized_keys_configured @private
+@use_lib
 @reached_if [ -f ~/.ssh/authorized_keys ] && [ "$(get_sha256 ~/.ssh/authorized_keys)" == "$(get_sha256 ./config/ssh/authorized_keys)" ]
   mkdir --parent ~/.ssh
   cp ./config/ssh/authorized_keys ~/.ssh
