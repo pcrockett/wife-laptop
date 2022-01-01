@@ -209,10 +209,10 @@ function get_sha256() {
 @goal ssh_host_keys_regenerated @private
 @depends_on sshd_installed
 @reached_if [ -f .state/ssh_host_keys_regenerated ]
-  pushd /etc/ssh || exit 1
+  pushd /etc/ssh &> /dev/null || exit 1
   sudo rm ssh_host_*key* || exit 1
   sudo ssh-keygen -t ed25519 -f ssh_host_ed25519_key -N "" < /dev/null || exit 1
-  popd || exit 1
+  popd &> /dev/null || exit 1
   touch .state/ssh_host_keys_regenerated
 
 @goal sshd_configured @private
