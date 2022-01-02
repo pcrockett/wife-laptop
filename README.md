@@ -15,7 +15,7 @@ This repo was designed with the following assumptions:
 
 ### TODO
 
-* [ ] Enable SSH only on VPN, give Phil access
+* [x] Enable SSH only on VPN, give Phil access
 * [ ] Check out `gsettings list-keys org.gnome.desktop.wm.keybindings`
 * [ ] Set auto-login via `/etc/gdm/custom.conf`
 * [ ] Set up backup script

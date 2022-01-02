@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# For more details about Makesure:
+# For more details about Tudas:
 #
-# https://github.com/xonixx/makesure
+# https://github.com/pcrockett/tudas
 #
 set -Eeuo pipefail
 
@@ -10,36 +10,6 @@ readonly LAPTOP_HOSTNAME="blueberry"
 
 readonly BOTTOM_DEB_NAME="bottom_0.6.6_amd64.deb"
 readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download/0.6.6/${BOTTOM_DEB_NAME}"
-
-function flathub_install() {
-  flatpak install --assumeyes --noninteractive --app "${1}" flathub
-}
-
-function command_exists() {
-  command -v "${1}" &> /dev/null
-}
-
-function service_exists() {
-  systemctl list-unit-files --full --type=service | grep --fixed-strings "${1}.service" > /dev/null
-}
-
-function user_service_exists() {
-  local service_name="${1}"
-  systemctl list-unit-files --full --type=service --user | grep --fixed-strings "${service_name}.service" &> /dev/null
-}
-
-function flatpak_is_installed() {
-  flatpak info "${1}" &> /dev/null
-}
-
-function get_sha256() {
-  test -f "${1}" || return 0
-
-  local sha_sum_output
-  IFS=" " read -r -a sha_sum_output <<< "$(sha256sum "${1}")"
-  # https://github.com/koalaman/shellcheck/wiki/SC2207
-  echo "${sha_sum_output[0]}"
-}
 
 @goal default
 @depends_on _repo_initialized _initial_system_upgrade _software_installed _configured
@@ -211,3 +181,36 @@ function get_sha256() {
   mkdir --parent ~/.ssh
   cp ./config/ssh/authorized_keys ~/.ssh
   chmod -R go-rwx ~/.ssh
+
+@lib
+
+function flathub_install() {
+  flatpak install --assumeyes --noninteractive --app "${1}" flathub
+}
+
+function command_exists() {
+  command -v "${1}" &> /dev/null
+}
+
+function service_exists() {
+  systemctl list-unit-files --full --type=service | grep --fixed-strings "${1}.service" > /dev/null
+}
+
+function user_service_exists() {
+  local service_name="${1}"
+  systemctl list-unit-files --full --type=service --user | grep --fixed-strings "${service_name}.service" &> /dev/null
+}
+
+function flatpak_is_installed() {
+  flatpak info "${1}" &> /dev/null
+}
+
+function get_sha256() {
+  test -f "${1}" || return 0
+
+  local sha_sum_output
+  IFS=" " read -r -a sha_sum_output <<< "$(sha256sum "${1}")"
+  # https://github.com/koalaman/shellcheck/wiki/SC2207
+  echo "${sha_sum_output[0]}"
+}
+
