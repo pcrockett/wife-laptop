@@ -4,17 +4,12 @@
 #
 # https://github.com/xonixx/makesure
 #
-@shell bash
-
-@define LAPTOP_USERNAME="${USER}"
-@define LAPTOP_HOSTNAME="blueberry"
-
-@define BOTTOM_DEB_NAME="bottom_0.6.6_amd64.deb"
-@define BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download/0.6.6/${BOTTOM_DEB_NAME}"
-
-@lib
-
 set -Eeuo pipefail
+
+readonly LAPTOP_HOSTNAME="blueberry"
+
+readonly BOTTOM_DEB_NAME="bottom_0.6.6_amd64.deb"
+readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download/0.6.6/${BOTTOM_DEB_NAME}"
 
 function flathub_install() {
   flatpak install --assumeyes --noninteractive --app "${1}" flathub
@@ -47,83 +42,77 @@ function get_sha256() {
 }
 
 @goal default
-@depends_on repo_initialized initial_system_upgrade software_installed configured
+@depends_on _repo_initialized _initial_system_upgrade _software_installed _configured
 
-@goal software_installed @private
-@depends_on standard_notes_installed bottom_installed signal_installed iptables_persistent_installed
-@depends_on gnome_dav_support_shim_installed iptables_rules_placed
+@goal _software_installed
+@depends_on _standard_notes_installed _bottom_installed _signal_installed _iptables_persistent_installed
+@depends_on _gnome_dav_support_shim_installed _iptables_rules_placed
 
-@goal configured @private
-@depends_on hostname_set iptables_configured bottom_configured tailscale_connected hosts_configured
-@depends_on scanner_configured sshd_configured authorized_keys_configured
+@goal _configured
+@depends_on _hostname_set _iptables_configured _bottom_configured _tailscale_connected _hosts_configured
+@depends_on _scanner_configured _sshd_configured _authorized_keys_configured
 
-@goal repo_initialized @private
+@goal _repo_initialized
 @reached_if [ -d .state ]
   mkdir .state
 
-@goal apt_updated @private
+@goal _apt_updated
   sudo apt-get update
 
-@goal apt_upgraded @private
-@depends_on apt_updated
+@goal _apt_upgraded
+@depends_on _apt_updated
   sudo apt-get upgrade --yes
 
-@goal hostname_set @private
+@goal _hostname_set
 @reached_if [ "$(hostname)" = "${LAPTOP_HOSTNAME}" ]
   hostnamectl set-hostname "${LAPTOP_HOSTNAME}"
 
-@goal initial_system_upgrade @private
-@depends_on apt_upgraded repo_initialized hostname_set
+@goal _initial_system_upgrade
+@depends_on _apt_upgraded _repo_initialized _hostname_set
 @reached_if [ -f .state/system_upgrade ]
   echo "Reboot now!"
   touch .state/system_upgrade
   exit 1
 
-@goal standard_notes_installed @private
+@goal _standard_notes_installed
 @reached_if flatpak_is_installed org.standardnotes.standardnotes
-@use_lib
   flathub_install org.standardnotes.standardnotes
 
-@goal bottom_downloaded @private
+@goal _bottom_downloaded
 @reached_if [ -f ".state/${BOTTOM_DEB_NAME}" ]
   cd .state || exit 1
   wget "${BOTTOM_DL_URL}"
 
-@goal bottom_installed @private
-@use_lib
+@goal _bottom_installed
 @reached_if command_exists btm
-@depends_on bottom_downloaded
+@depends_on _bottom_downloaded
   sudo dpkg --install ".state/${BOTTOM_DEB_NAME}"
 
-@goal signal_installed @private
+@goal _signal_installed
 @reached_if flatpak_is_installed org.signal.Signal
-@use_lib
   flathub_install org.signal.Signal
 
-@goal iptables_persistent_installed @private
-@use_lib
-@depends_on apt_updated
+@goal _iptables_persistent_installed
+@depends_on _apt_updated
 @reached_if service_exists iptables
   sudo apt-get install --yes iptables-persistent
 
-@goal gnome_dav_support_shim_downloaded @private
+@goal _gnome_dav_support_shim_downloaded
 @reached_if [ -f .state/gnome-dav-support-amd64.zip ]
   # https://github.com/pcrockett/Gnome-DAV-Support-Shim
   cd .state || exit 1
   wget https://github.com/pcrockett/Gnome-DAV-Support-Shim/releases/download/v1.0/gnome-dav-support-amd64.zip
 
-@goal gnome_dav_support_shim_installed @private
-@use_lib
-@depends_on gnome_dav_support_shim_downloaded
+@goal _gnome_dav_support_shim_installed
+@depends_on _gnome_dav_support_shim_downloaded
 @reached_if user_service_exists gnome-dav-shim
   cd .state || exit 1
   unzip gnome-dav-support-amd64.zip
   ./install.sh
   rm install.sh # Don't want a nondescript `install.sh` hanging around...
 
-@goal iptables_rules_placed @private
-@use_lib
-@depends_on iptables_persistent_installed
+@goal _iptables_rules_placed
+@depends_on _iptables_persistent_installed
 @reached_if [ "$(get_sha256 config/iptables/rules.v4)" == "$(get_sha256 /etc/iptables/rules.v4)" ] && [ "$(get_sha256 config/iptables/rules.v6)" == "$(get_sha256 /etc/iptables/rules.v6)" ]
   sudo cp config/iptables/rules.v4 /etc/iptables/
   sudo cp config/iptables/rules.v6 /etc/iptables/
@@ -138,13 +127,13 @@ function get_sha256() {
     sudo tailscale up --accept-routes
   fi
 
-@goal iptables_configured @private
-@depends_on iptables_rules_placed
+@goal _iptables_configured
+@depends_on _iptables_rules_placed
 @reached_if [ "$(systemctl is-enabled netfilter-persistent)" == "enabled" ]
   sudo systemctl enable --now iptables
   sudo systemctl enable --now ip6tables
 
-@goal bottom_configured @private
+@goal _bottom_configured
 @reached_if [ -L ~/.config/bottom/bottom.toml ]
   bottom_dir=~/.config/bottom
   mkdir --parent "${bottom_dir}"
@@ -152,62 +141,57 @@ function get_sha256() {
   repo_dir="$(readlink -f .)"
   ln --symbolic "${repo_dir}/config/bottom.toml" "${bottom_dir}/bottom.toml"
 
-@goal tailscale_key_added @private
+@goal _tailscale_key_added
 @reached_if [ -f /etc/apt/trusted.gpg.d/tailscale.gpg ]
   sudo cp ./config/tailscale/tailscale.gpg /etc/apt/trusted.gpg.d/
   sudo chown root:root /etc/apt/trusted.gpg.d/tailscale.gpg
 
-@goal tailscale_list_added @private
-@depends_on tailscale_key_added
+@goal _tailscale_list_added
+@depends_on _tailscale_key_added
 @reached_if [ -f /etc/apt/sources.list.d/tailscale.list ]
   sudo cp ./config/tailscale/tailscale.list /etc/apt/sources.list.d/
   sudo chown root:root /etc/apt/sources.list.d/tailscale.list
   sudo apt-get update
 
-@goal tailscale_installed @private
-@use_lib
+@goal _tailscale_installed
 @reached_if command_exists tailscale
-@depends_on tailscale_list_added
+@depends_on _tailscale_list_added
   sudo apt-get install --yes tailscale
 
-@goal tailscale_connected @private
-@depends_on tailscale_installed
+@goal _tailscale_connected
+@depends_on _tailscale_installed
 @reached_if tailscale status &> /dev/null
   sudo tailscale up --accept-routes
 
-@goal hosts_configured @private
-@use_lib
+@goal _hosts_configured
 @reached_if [ "$(get_sha256 /etc/hosts)" == "$(get_sha256 ./config/hosts)" ]
   sudo cp ./config/hosts /etc/hosts
   sudo chown root:root /etc/hosts
 
-@goal brscan_deb_downloaded @private
+@goal _brscan_deb_downloaded
 @reached_if [ -f ".state/brscan4.amd64.deb" ]
   curl --fail --silent --show-error \
     --output .state/brscan4.amd64.deb \
     --location "https://download.brother.com/welcome/dlf006645/brscan4-0.4.10-1.amd64.deb"
 
-@goal brscan_installed @private
-@use_lib
+@goal _brscan_installed
 @reached_if command_exists brsaneconfig4
-@depends_on brscan_deb_downloaded
+@depends_on _brscan_deb_downloaded
   sudo dpkg --install .state/brscan4.amd64.deb
 
-@goal scanner_configured @private
-@use_lib
+@goal _scanner_configured
 @reached_if [ -f .state/printer_configured ]
-@depends_on brscan_installed tailscale_connected
+@depends_on _brscan_installed _tailscale_connected
   sudo brsaneconfig4 -a name=Scanner_DCP7055W model=DCP7055W ip=10.34.138.5 || exit 1
   touch .state/printer_configured
 
-@goal sshd_installed @private
-@use_lib
+@goal _sshd_installed
 @reached_if command_exists sshd
-@depends_on apt_updated
+@depends_on _apt_updated
   sudo apt-get install --yes openssh-server
 
-@goal ssh_host_keys_regenerated @private
-@depends_on sshd_installed
+@goal _ssh_host_keys_regenerated
+@depends_on _sshd_installed
 @reached_if [ -f .state/ssh_host_keys_regenerated ]
   pushd /etc/ssh &> /dev/null || exit 1
   sudo rm ssh_host_*key* || exit 1
@@ -215,18 +199,15 @@ function get_sha256() {
   popd &> /dev/null || exit 1
   touch .state/ssh_host_keys_regenerated
 
-@goal sshd_configured @private
-@use_lib
-@depends_on ssh_host_keys_regenerated
+@goal _sshd_configured
+@depends_on _ssh_host_keys_regenerated
 @reached_if [ "$(get_sha256 config/ssh/blueberry.conf)" == "$(get_sha256 /etc/ssh/sshd_config.d/blueberry.conf)" ]
   sudo cp config/ssh/blueberry.conf /etc/ssh/sshd_config.d/ || exit 1
   sudo chown root:root /etc/ssh/sshd_config.d/blueberry.conf || exit 1
   sudo systemctl restart sshd
 
-@goal authorized_keys_configured @private
-@use_lib
+@goal _authorized_keys_configured
 @reached_if [ -f ~/.ssh/authorized_keys ] && [ "$(get_sha256 ~/.ssh/authorized_keys)" == "$(get_sha256 ./config/ssh/authorized_keys)" ]
   mkdir --parent ~/.ssh
   cp ./config/ssh/authorized_keys ~/.ssh
   chmod -R go-rwx ~/.ssh
-
