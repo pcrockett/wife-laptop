@@ -16,7 +16,7 @@ readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download
 
 @goal _software_installed
 @depends_on _standard_notes_installed _bottom_installed _signal_installed _iptables_persistent_installed
-@depends_on _gnome_dav_support_shim_installed _iptables_rules_placed
+@depends_on _gnome_dav_support_shim_installed _iptables_rules_placed _skype_installed
 
 @goal _configured
 @depends_on _hostname_set _iptables_configured _bottom_configured _tailscale_connected _hosts_configured
@@ -181,6 +181,10 @@ readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download
   mkdir --parent ~/.ssh
   cp ./config/ssh/authorized_keys ~/.ssh
   chmod -R go-rwx ~/.ssh
+
+@goal _skype_installed
+@reached_if flatpak_is_installed com.skype.Client
+  flathub_install com.skype.Client
 
 @lib
 
