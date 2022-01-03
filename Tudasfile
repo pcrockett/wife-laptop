@@ -83,7 +83,7 @@ readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download
 
 @goal _iptables_rules_placed
 @depends_on _iptables_persistent_installed
-@reached_if [ "$(get_sha256 config/iptables/rules.v4)" == "$(get_sha256 /etc/iptables/rules.v4)" ] && [ "$(get_sha256 config/iptables/rules.v6)" == "$(get_sha256 /etc/iptables/rules.v6)" ]
+@reached_if files_are_same config/iptables/rules.v4 /etc/iptables/rules.v4 && files_are_same config/iptables/rules.v6 /etc/iptables/rules.v6
   sudo cp config/iptables/rules.v4 /etc/iptables/
   sudo cp config/iptables/rules.v6 /etc/iptables/
   if [ "$(systemctl is-active iptables)" == "active" ]; then
@@ -134,7 +134,7 @@ readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download
   sudo tailscale up --accept-routes
 
 @goal _hosts_configured
-@reached_if [ "$(get_sha256 /etc/hosts)" == "$(get_sha256 ./config/hosts)" ]
+@reached_if files_are_same /etc/hosts ./config/hosts
   sudo cp ./config/hosts /etc/hosts
   sudo chown root:root /etc/hosts
 
@@ -171,13 +171,13 @@ readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download
 
 @goal _sshd_configured
 @depends_on _ssh_host_keys_regenerated
-@reached_if [ "$(get_sha256 config/ssh/blueberry.conf)" == "$(get_sha256 /etc/ssh/sshd_config.d/blueberry.conf)" ]
+@reached_if files_are_same config/ssh/blueberry.conf /etc/ssh/sshd_config.d/blueberry.conf
   sudo cp config/ssh/blueberry.conf /etc/ssh/sshd_config.d/ || exit 1
   sudo chown root:root /etc/ssh/sshd_config.d/blueberry.conf || exit 1
   sudo systemctl restart sshd
 
 @goal _authorized_keys_configured
-@reached_if [ -f ~/.ssh/authorized_keys ] && [ "$(get_sha256 ~/.ssh/authorized_keys)" == "$(get_sha256 ./config/ssh/authorized_keys)" ]
+@reached_if files_are_same ~/.ssh/authorized_keys ./config/ssh/authorized_keys
   mkdir --parent ~/.ssh
   cp ./config/ssh/authorized_keys ~/.ssh
   chmod -R go-rwx ~/.ssh
@@ -218,3 +218,6 @@ function get_sha256() {
   echo "${sha_sum_output[0]}"
 }
 
+function files_are_same() {
+  test "$(get_sha256 "${1}")" == "$(get_sha256 "${2}")"
+}
