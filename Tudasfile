@@ -17,6 +17,7 @@ readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download
 @goal _software_installed
 @depends_on _standard_notes_installed _bottom_installed _signal_installed _iptables_persistent_installed
 @depends_on _gnome_dav_support_shim_installed _iptables_rules_placed _skype_installed _onlyoffice_installed
+@depends_on _screen_installed
 
 @goal _configured
 @depends_on _hostname_set _iptables_configured _bottom_configured _tailscale_connected _hosts_configured
@@ -189,6 +190,11 @@ readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download
 @goal _onlyoffice_installed
 @reached_if flatpak_is_installed org.onlyoffice
   flathub_install org.onlyoffice
+
+@goal _screen_installed
+@reached_if command_exists screen
+@depends_on _apt_updated
+  apt-get install --yes screen
 
 @lib
 
