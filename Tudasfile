@@ -114,9 +114,9 @@ readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download
   ln --symbolic "${repo_dir}/config/bottom.toml" "${bottom_dir}/bottom.toml"
 
 @goal _tailscale_key_added
-@reached_if [ -f /etc/apt/trusted.gpg.d/tailscale.gpg ]
-  sudo cp ./config/tailscale/tailscale.gpg /etc/apt/trusted.gpg.d/
-  sudo chown root:root /etc/apt/trusted.gpg.d/tailscale.gpg
+@reached_if [ -f /usr/share/keyrings/tailscale-archive-keyring.gpg ]
+  sudo cp ./config/tailscale/tailscale.gpg /usr/share/keyrings/tailscale-archive-keyring.gpg
+  sudo chown root:root /usr/share/keyrings/tailscale-archive-keyring.gpg
 
 @goal _tailscale_list_added
 @depends_on _tailscale_key_added
