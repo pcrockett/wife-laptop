@@ -1,2 +1,2 @@
-# Tailscale packages for ubuntu impish
-deb https://pkgs.tailscale.com/stable/ubuntu impish main
+# Tailscale packages for ubuntu jammy
+deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/ubuntu jammy main

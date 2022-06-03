@@ -12,11 +12,11 @@ key_path="${script_dir}/tailscale.gpg"
 list_path="${script_dir}/tailscale.list"
 
 curl --fail --silent --show-error \
-    --location https://pkgs.tailscale.com/stable/ubuntu/impish.gpg \
+    --location https://pkgs.tailscale.com/stable/ubuntu/jammy.noarmor.gpg \
     | gpg --dearmor > "${key_path}"
 
 curl --fail --silent --show-error \
-    --location https://pkgs.tailscale.com/stable/ubuntu/impish.list \
+    --location https://pkgs.tailscale.com/stable/ubuntu/jammy.tailscale-keyring.list \
     > "${list_path}"
 
 echo "Success. See files:

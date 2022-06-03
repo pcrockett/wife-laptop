@@ -8,8 +8,9 @@ set -Eeuo pipefail
 
 readonly LAPTOP_HOSTNAME="blueberry"
 
-readonly BOTTOM_DEB_NAME="bottom_0.6.6_amd64.deb"
-readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download/0.6.6/${BOTTOM_DEB_NAME}"
+readonly BOTTOM_VERSION="0.6.8"
+readonly BOTTOM_DEB_NAME="bottom_${BOTTOM_VERSION}_amd64.deb"
+readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download/${BOTTOM_VERSION}/${BOTTOM_DEB_NAME}"
 
 @goal default
 @depends_on _repo_initialized _initial_system_upgrade _software_installed _configured
