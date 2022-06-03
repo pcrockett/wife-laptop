@@ -188,13 +188,13 @@ readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download
   flathub_install com.skype.Client
 
 @goal _onlyoffice_installed
-@reached_if flatpak_is_installed org.onlyoffice
-  flathub_install org.onlyoffice
+@reached_if flatpak_is_installed org.onlyoffice.desktopeditors
+  flathub_install org.onlyoffice.desktopeditors
 
 @goal _screen_installed
 @reached_if command_exists screen
 @depends_on _apt_updated
-  apt-get install --yes screen
+  sudo apt-get install --yes screen
 
 @lib
 
