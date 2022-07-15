@@ -84,8 +84,14 @@ readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download
   rm install.sh # Don't want a nondescript `install.sh` hanging around...
 
 @goal _iptables_rules_placed
-@depends_on _iptables_persistent_installed
+@depends_on _iptables_persistent_installed _screen_installed
 @reached_if files_are_same config/iptables/rules.v4 /etc/iptables/rules.v4 && files_are_same config/iptables/rules.v6 /etc/iptables/rules.v6
+
+  if [ "${SSH_CLIENT:-}" != "" ] && [ "${STY:-}" == "" ]; then
+    echo "You are connected via SSH, but not running \`screen\`. Consider adding \`RemoteCommand screen -RR\` to your SSH config."
+    exit 1
+  fi
+
   sudo cp config/iptables/rules.v4 /etc/iptables/
   sudo cp config/iptables/rules.v6 /etc/iptables/
   if [ "$(systemctl is-active iptables)" == "active" ]; then
@@ -95,7 +101,7 @@ readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download
     sudo systemctl restart ip6tables
   fi
   if command_exists tailscale && tailscale status &> /dev/null; then
-    sudo tailscale down
+    sudo tailscale down --accept-risk=lose-ssh
     sudo tailscale up --accept-routes
   fi
 
