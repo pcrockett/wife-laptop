@@ -94,11 +94,8 @@ readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download
 
   sudo cp config/iptables/rules.v4 /etc/iptables/
   sudo cp config/iptables/rules.v6 /etc/iptables/
-  if [ "$(systemctl is-active iptables)" == "active" ]; then
-    sudo systemctl restart iptables
-  fi
-  if [ "$(systemctl is-active ip6tables)" == "active" ]; then
-    sudo systemctl restart ip6tables
+  if [ "$(systemctl is-active netfilter-persistent)" == "active" ]; then
+    sudo systemctl restart netfilter-persistent
   fi
   if command_exists tailscale && tailscale status &> /dev/null; then
     sudo tailscale down --accept-risk=lose-ssh
