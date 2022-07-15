@@ -8,6 +8,11 @@
 -A INPUT -m conntrack --ctstate INVALID -j DROP
 -A INPUT -p udp -m udp --dport 67 -j ACCEPT
 -A INPUT -i tailscale0 -p tcp --dport 22 -j ACCEPT
+
+# Syncthing
+-A INPUT -i tailscale0 -p tcp --dport 8384 -j ACCEPT
+-A INPUT -i tailscale0 -p tcp --dport 22000 -j ACCEPT
+
 COMMIT
 # Completed on Fri Oct 29 11:55:28 2021
 
