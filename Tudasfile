@@ -18,7 +18,7 @@ readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download
 @goal _software_installed
 @depends_on _standard_notes_installed _bottom_installed _signal_installed _iptables_persistent_installed
 @depends_on _gnome_dav_support_shim_installed _iptables_rules_placed _skype_installed _onlyoffice_installed
-@depends_on _screen_installed
+@depends_on _screen_installed _syncthing_installed
 
 @goal _configured
 @depends_on _hostname_set _iptables_configured _bottom_configured _tailscale_connected _hosts_configured
@@ -196,6 +196,11 @@ readonly BOTTOM_DL_URL="https://github.com/ClementTsang/bottom/releases/download
 @reached_if command_exists screen
 @depends_on _apt_updated
   sudo apt-get install --yes screen
+
+@goal _syncthing_installed
+@reached_if command_exists syncthing
+@depends_on _apt_updated
+  sudo apt-get install --yes syncthing
 
 @lib
 
