@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 #
+# Disable "function is defined later, move it up" warning:
+# shellcheck disable=2218
+#
 # For more details about Tudas:
 #
 # https://github.com/pcrockett/tudas
